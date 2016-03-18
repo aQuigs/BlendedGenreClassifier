@@ -1,0 +1,63 @@
+*pytagger v0.5 (?? ??? ????)
+    01 May 2006: Alastair Tse <alastair@liquidx.net>
+    - Fix APIC extraction alignment error for v2.2, v2.3, v2.4
+    - Fix APIC insertion error for v2.2
+    - Refactored APIC output and input.
+    - Removed debugging print statement for ID3v2
+
+*pytagger v0.4 (07 May 2005)
+    07 May 2005; Alastair Tse <alastair@liquidx.net>
+    - Updated example mp3check script using the new API
+
+    10 April 2005; Alastair Tse <alastair@liquidx.net>
+    - Added copyright (BSD) and changed contact email
+    - Revamped ID3v1 to allow reading and writing. 
+    - Removed requirement for mode specified for ID3v1 and ID3v2. 
+      It is now auto detect. If you open the file, it will
+      open it as read/write, but will not commit any changes unless
+      you run the *commit() functions.
+    - API!! Does not throw exception if unable to find ID3 tag. You should
+      now check the output tag_exists() to determine whether it was able
+      to find tags. This is done so that you can create new ID3 tags without
+      requiring the old one to be there. Still throws exceptions if tags
+      found is invalid or IOErrors occur.
+
+*pytagger v0.3 (20 Dec 2004)
+    
+    21 Dec 2004; Alastair Tse <alastair@liquidx.net>:
+    - Fix problem with incrementing tag version because of python floating
+      point rounding. Thanks to Ates Dagli and Niall Smart.
+    - Improved documentation by adding some more instance variables.
+    - Fixed mimetype/imagetype APIC extraction for ID3v2.2, 
+      thanks to Niall Smart.
+      
+
+*pytagger v0.2 (26 Apr 2004)
+
+	02 May 2004; Alastair Tse <alastair@liquidx.net>:
+	Renamed to pytagger to avoid confusion with pyid3
+	
+	26 Apr 2004; Alastair Tse <alastair@liquidx.net>:
+	Refactoring code. 
+	- Add copious documentation, example
+	- Split into managable chunks
+	- Add Unit Tests
+	- Make pychecker/pylint a requirement
+
+*PyID3v2 v0.1.1 (03 Feb 2004)
+	 
+	 03 Feb 2004; Alastair Tse <alastair@liquidx.net>:
+	 Bugfix release.
+	 
+	 - Silently ignore invalid ID3v2 tags. Some encoders insert
+	   their own custom tags like CON1.
+	 - Various fixes to encoding/decoding tags for ID3v2.2.
+	 - Made unrecognised flags error use _debug() methods
+	 - Fix footer flag not found when using ID3v2.2
+	 - Add fnmatch to mp3stats.py (Richard Shaw)
+
+*PyID3v2 v0.1 (14 Jan 2004)
+
+	14 Jan 2004; Alastair Tse <alastair@liquidx.net>:
+	Initial Release
+	
