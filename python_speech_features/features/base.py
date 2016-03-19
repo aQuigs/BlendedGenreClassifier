@@ -10,7 +10,7 @@ try:
 except:
   xrange=range
 
-def mfcc(signal,samplerate=16000,winlen=10,winstep=10,numcep=10,
+def mfcc(signal,samplerate=16000,winlen=.25,winstep=.1,numcep=10,
           nfilt=26,nfft=512,lowfreq=0,highfreq=None,preemph=0.97,ceplifter=22,appendEnergy=True):
     """Compute MFCC features from an audio signal.
 
