@@ -18,9 +18,6 @@ def updateGenre(filename):
     tag = ID3v2(filename)
     for frame in tag.frames:
         if frame.fid == 'TCON':
-            if len(string.strip(frame.strings[0])) != 0:
-                return
-            frame.strings[0] = string.strip(frame.strings[0])
             if frame.strings[0] == '(20)':
                 frame.set_text('Alternative')
             elif frame.strings[0] == '(15)':
@@ -33,8 +30,17 @@ def updateGenre(filename):
                 frame.set_text('Pop')
             elif frame.strings[0] == 'Rap Rock':
                 frame.set_text('Rap Rock')
+            elif frame.strings[0] == '(14)':
+                frame.set_text('R&B')
+            elif frame.strings[0] == '(17)':
+                frame.set_text('Rock')
+            elif frame.strings[0] == '(14)R&B':
+                frame.set_text('R&B')
+            elif frame.strings[0] == '(1)':
+                frame.set_text('Classic Rock')
+            elif frame.strings[0] == '(2)':
+                frame.set_text('Country')
             tag.commit()
-    print(str(i))
 
 def listGenre(filename, masterdict):
     tag = ID3v2(filename)
@@ -58,4 +64,4 @@ def writeGenresToDisk(indir, outdir):
     # print(str(masterdict))
 
 if __name__ == '__main__':
-    writeGenresToDisk('/home/quiggles/Desktop/513music/single-genre', '/home/quiggles/BlendedGenreClassifier/songdata')
+    writeGenresToDisk('/home/quiggles/Desktop/513music/single-genre/classify-me', '/home/quiggles/BlendedGenreClassifier/songdata')

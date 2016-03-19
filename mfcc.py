@@ -39,8 +39,9 @@ def generateMFCCData(indir, outdir):
             writeMFCC(f, outdir)
             newfilename = os.path.splitext(os.path.basename(f))[0]
             print('YES: '+ newfilename)
-            # os.rename(f, indir+"/classify-me/" + newfilename+".wav")
-            # os.rename(indir+'/' + newfilename + ".mp3", indir+"/classify-me/" + newfilename+".mp3")
+            if 'classify-me' not in indir:
+                os.rename(f, indir+"/classify-me/" + newfilename+".wav")
+                os.rename(indir+'/' + newfilename + ".mp3", indir+"/classify-me/" + newfilename+".mp3")
         except:
             print('NO: '+f)
 

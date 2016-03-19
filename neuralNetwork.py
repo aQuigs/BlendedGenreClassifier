@@ -15,12 +15,18 @@ DIR = wd + '/songdata'
 SONG_FILE_DIR = '/home/quiggles/Desktop/513music/single-genre/classify-me'
 
 GENRE_DICT = {
-    'Punk Rock'   : 0,
-    'Rap Rock'    : 1,
-    'Pop'         : 2,
-    'Alternative' : 3,
-    'Hard Rock'   : 4,
-    'Rap'         : 5
+    'Punk Rock'    : 0,
+    'Rap Rock'     : 1,
+    'Pop'          : 2,
+    'Alternative'  : 3,
+    'Hard Rock'    : 4,
+    'Rap'          : 5,
+    'Country'      : 6,
+    'Classical'    : 7,
+    'R&B'          : 8,
+    'Techno'       : 9,
+    'Rock'         : 10,
+    'Classic Rock' : 11
 }
 NUMBER_OF_GENRES = len(GENRE_DICT)
 INPUT_DIMS = 40
@@ -64,7 +70,7 @@ def classifySegments():
 
     print('Training...')
     trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0.1, verbose=True, weightdecay=0.01)
-    trainer.trainEpochs(20)
+    trainer.trainEpochs(100)
     print('Training done')
 
     print('Classifying test data segments...')
@@ -88,9 +94,10 @@ def classifySegments():
                 os.remove(PROCESSING_FILENAME)
         except:
             print('Except at: ' + str(genreCounts))
+            os.remove(PROCESSING_FILENAME)
         
         trueGenre = None
-        with open(DIR + '/' + basename + '.genre') as f:
+        with open(DIR + '/' + basename + '.genre', 'r') as f:
             trueGenre = f.readline()
         accuracy = genreCounts[GENRE_DICT[trueGenre]] / float(sum(genreCounts))
         print("%5.2f%% accurate for '%s'" % (100*accuracy, basename))
