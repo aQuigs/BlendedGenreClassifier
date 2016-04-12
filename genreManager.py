@@ -40,6 +40,20 @@ def updateGenre(filename):
                 frame.set_text('Classic Rock')
             elif frame.strings[0] == '(2)':
                 frame.set_text('Country')
+            elif frame.strings[0] == 'Indie Rock':
+                frame.set_text('Indie')
+            elif frame.strings[0] == '(18)':
+                frame.set_text('Techno')
+            elif frame.strings[0] == 'Punk':
+                frame.set_text('Punk Rock')
+            elif frame.strings[0] == '(33)':
+                frame.set_text('Instrumental')
+            elif frame.strings[0] == 'garage, lo-fi':
+                frame.set_text('Alternative')
+            elif frame.strings[0] == '(121)Punk Rock':
+                frame.set_text('Punk Rock')
+            else:
+                continue
             tag.commit()
 
 def listGenre(filename, masterdict):
@@ -53,13 +67,13 @@ def listGenre(filename, masterdict):
                 masterdict[genre] = 1
 
 def writeGenresToDisk(indir, outdir):
-    for f in glob.glob(outdir + '/*.genre'):
-        os.remove(f)
+    # for f in glob.glob(outdir + '/*.genre'):
+        # os.remove(f)
 
     # masterdict = dict()
     for f in glob.glob(indir + '/*.mp3'):
-        writeGenre(f, outdir)
-        # updateGenre(f)
+        # writeGenre(f, outdir)
+        updateGenre(f)
         # listGenre(f, masterdict)
     # print(str(masterdict))
 

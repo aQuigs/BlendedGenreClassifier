@@ -6,6 +6,9 @@ sys.path.append(wd + '/python_speech_features')
 from features import mfcc
 import scipy.io.wavfile as wav
 
+DIR = '/home/quiggles/Desktop/513music/single-genre'
+OUTDIR = wd + '/songdata'
+
 
 def getMFCC(filename):
     (rate,sig) = wav.read(filename)
@@ -45,3 +48,5 @@ def generateMFCCData(indir, outdir):
         except:
             print('NO: '+f)
 
+if __name__ == '__main__':
+    generateMFCCData(DIR, OUTDIR)
