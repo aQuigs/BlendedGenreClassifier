@@ -4,15 +4,19 @@ from pybrain.datasets import ClassificationDataSet
 from pybrain.utilities import percentError
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
-from pybrain.structure.modules import SoftmaxLayer
+from pybrain.structure.modules import SoftmaxLayer, LinearLayer, SigmoidLayer
+from pybrain.structure import FeedForwardNetwork, FullConnection
+from amplitudeChange import analyzeFile
 from pydub import AudioSegment
-from mfcc import getMFCC
+from mfcc import getData
+from random import shuffle
+import numpy
 
 from glob import glob
 import sys, os, glob, string, csv
 wd = os.path.dirname(os.path.realpath(__file__))
-DIR = wd + '/songdata'
-SONG_FILE_DIR = '/home/quiggles/Desktop/513music/single-genre/classify-me'
+DIR = wd + '/songdata/subset'
+SONG_FILE_DIR = '/home/quiggles/Desktop/513music/single-genre/classify-me/subset'
 
 GENRE_DICT = {
     'Punk Rock'    : 0,
@@ -25,14 +29,13 @@ GENRE_DICT = {
     'Classical'    : 7,
     'R&B'          : 8,
     'Techno'       : 9,
-    'Rock'         : 10,
-    'Classic Rock' : 11,
-    'Indie'        : 12,
-    'Instrumental' : 13,
-    'Folk'         : 14
+    'Classic Rock' : 10,
+    'Indie'        : 11,
+    'Instrumental' : 12,
+    'Folk'         : 13
 }
 NUMBER_OF_GENRES = len(GENRE_DICT)
-INPUT_DIMS = 40
+INPUT_DIMS = (26)*4
 
 def classifySegments():
     global NUMBER_OF_GENRES
@@ -42,12 +45,14 @@ def classifySegments():
 
     SEGMENT_LENGTH = 1000
     PROCESSING_FILENAME = DIR + '/processing.wav'
+    # AMP_PROCESSING_FILENAME = DIR + '/processing.amp'
     TRAINING_DATA_PROPORTION = 0.8
-    TRAINING_EPOCHS = 100
+    TRAINING_EPOCHS = 80
 
     print('Reading training data...')
     trndata_temp = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
     g = glob.glob(DIR + '/*.csv')
+    shuffle(g)
     for filename in g[:int(TRAINING_DATA_PROPORTION*len(g))]:
         basename = os.path.splitext(filename)[0]
         data = None
@@ -71,8 +76,28 @@ def classifySegments():
 
     trndata._convertToOneOfMany()
     # tstdata._convertToOneOfMany()
+    ## Manual build
+    # fnn = FeedForwardNetwork()
+    # outlayer = SoftmaxLayer(trndata.outdim)
+    # inlayer = LinearLayer(INPUT_DIMS)
+    # hiddenLayer = SigmoidLayer(60)
+    # fnn.addInputModule(inlayer)
+    # fnn.addModule(hiddenLayer)
+    # fnn.addOutputModule(outlayer)
+    # fnn.addConnection(FullConnection(inlayer, hiddenLayer))
+    # fnn.addConnection(FullConnection(hiddenLayer, outlayer))
+    # fnn.sortModules()
 
-    fnn = buildNetwork(trndata.indim, 15, trndata.outdim, outclass=SoftmaxLayer)
+    fnn = buildNetwork(trndata.indim, 60, trndata.outdim, outclass=SoftmaxLayer)
+
+    mistakenDict = dict()
+    for x in GENRE_DICT.keys():
+
+        # temp = dict()
+        # for y in GENRE_DICT.keys():
+        #     temp[y] = 0
+        # mistakenDict[x] = temp
+        mistakenDict[x] = [0] * NUMBER_OF_GENRES
 
     print('Training...')
     trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0.1, verbose=True, weightdecay=0.01)
@@ -98,7 +123,13 @@ def classifySegments():
                 segment = song[i:i+SEGMENT_LENGTH]
                 i += SEGMENT_LENGTH
                 segment.export(PROCESSING_FILENAME, format='wav')
-                genreConfidences = list(fnn.activate(getMFCC(PROCESSING_FILENAME)))
+                inputs = getData(PROCESSING_FILENAME).tolist()
+                # otherStuff = analyzeFile(PROCESSING_FILENAME)
+                # inputs.append(otherStuff[0])
+                # inputs.append(otherStuff[1])
+                # inputs.append(otherStuff[2])
+                # inputs.append(otherStuff[3])
+                genreConfidences = list(fnn.activate(inputs))
                 segmentGenreIndex = genreConfidences.index(max(genreConfidences))
                 genreCounts[segmentGenreIndex] += 1
                 os.remove(PROCESSING_FILENAME)
@@ -118,9 +149,21 @@ def classifySegments():
             correctlyClassifiedSongCount[genreIndex] += 1
 
         print("%5.2f%% accurate for '%s'" % (100*accuracy, basename))
+
+        mistakenList = mistakenDict[trueGenre]
+        total = float(sum(genreCounts))
+        for j in xrange(len(genreCounts)):
+            mistakenList[j] += genreCounts[j] / total
+
         # totalAccuracy += accuracy
         # songCount += 1
     print('Done classifying segments')
+    for k in mistakenDict:
+        for v in xrange(len(mistakenDict[k])):
+            if genreSongCount[v] > 0:
+                mistakenDict[k][v] /= float(genreSongCount[v])
+                mistakenDict[k][v] *= 100
+
     for k in GENRE_DICT:
         i = GENRE_DICT[k]
         print('-'*75)
@@ -128,6 +171,7 @@ def classifySegments():
         if genreSongCount[i]:
             print('Total song classification accuracy for %s: %5.2f%%' % (k, 100.0*correctlyClassifiedSongCount[i]/genreSongCount[i]))
             print('Average segment classification accuracy for %s: %5.2f%%' % (k, 100.0*averageSegmentAccuracies[i]/genreSongCount[i]))
+            print('Mistakes: ' + str(mistakenDict[k]))
     totalSongCount = sum(genreSongCount)
     totalAccuracy = sum(averageSegmentAccuracies)
     correctlyClassifiedSongs = sum(correctlyClassifiedSongCount)
