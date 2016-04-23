@@ -34,8 +34,76 @@ GENRE_DICT = {
     'Instrumental' : 12,
     'Folk'         : 13
 }
+
+LUMPS = [
+    ['Classical'],
+    ['Folk'],
+    ['Punk Rock', 'Classic Rock', 'Alternative', 'Hard Rock'],
+    ['Rap','Country','R&B'],
+    ['Pop'],
+    ['Techno'],
+    ['Indie'],
+    ['Instrumental'],
+    ['Rap Rock']
+]
+
+
+# LUMP_DICT = {
+#     'Classical'    : 0,
+#     'Folk'         : 1,
+#     'Punk Rock'    : 2,
+#     'Classic Rock' : 2,
+#     'Alternative'  : 2,
+#     'Hard Rock'    : 2,
+#     'Rap'          : 3,
+#     'Country'      : 3,
+#     'R&B'          : 3,
+#     'Pop'          : 4,
+#     'Techno'       : 5,
+#     'Indie'        : 5,
+#     'Instrumental' : 5,
+#     'Rap Rock'     : 5,
+# }
 NUMBER_OF_GENRES = len(GENRE_DICT)
+NUMBER_OF_LUMPS = len(LUMPS)
 INPUT_DIMS = (26)*4
+
+class NeuralInfo:
+
+    def __init__(self, numClasses):
+        global INPUT_DIMS
+        self.numClasses = numClasses
+        self.trndata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=numClasses)
+
+    def buildNetwork(self):
+        temp = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=self.numClasses)
+        for n in xrange(0, self.trndata.getLength()):
+            temp.addSample(self.trndata.getSample(n)[0], self.trndata.getSample(n)[1])
+
+        temp._convertToOneOfMany()
+        self.trndata = temp
+        self.fnn = buildNetwork(self.trndata.indim, 60, self.trndata.outdim, outclass=SoftmaxLayer)
+
+    def addTrainingSample(self, data, genreIndex):
+        self.trndata.addSample(data, genreIndex)
+
+    def trainNetwork(self, epochs):
+        trainer = BackpropTrainer(self.fnn, dataset=self.trndata, momentum=0.1, verbose=True, weightdecay=0.01)
+        trainer.trainEpochs(epochs)
+
+    def testData(self, data):
+        return list(self.fnn.activate(data))
+
+def getLevel1GenreIndex(genre):
+    for (i,v) in enumerate(LUMPS):
+        if genre in v:
+            return i
+
+def getLevel2GenreIndex(genre):
+    for l in LUMPS:
+        for (j,u) in enumerate(l):
+            if genre == u:
+                return j
 
 def classifySegments(trainingCSVs, testingCSVs):
     global NUMBER_OF_GENRES
@@ -49,9 +117,15 @@ def classifySegments(trainingCSVs, testingCSVs):
     # TRAINING_DATA_PROPORTION = 0.8
     TRAINING_EPOCHS = 80
 
-    print('Reading training data...')
-    trndata_temp = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
+    SUB_NETWORKS = []
+    MAIN_NETWORK = NeuralInfo(NUMBER_OF_LUMPS)
+    for i in xrange(NUMBER_OF_LUMPS):
+        if len(LUMPS[i]) > 1:
+            SUB_NETWORKS.append(NeuralInfo(len(LUMPS[i])))
+        else:
+            SUB_NETWORKS.append(None)
 
+    print('Reading training data...')
     for filename in trainingCSVs:
         basename = os.path.splitext(filename)[0]
         data = None
@@ -61,33 +135,16 @@ def classifySegments(trainingCSVs, testingCSVs):
             data = map(float, data)
         with open(basename + '.genre', 'r') as fhandle:
             genre = fhandle.readline()
-        trndata_temp.addSample(data, [GENRE_DICT[genre]])
+        lumpIndex = getLevel1GenreIndex(genre)
+        MAIN_NETWORK.addTrainingSample(data, lumpIndex)
+        if SUB_NETWORKS[lumpIndex]:
+            SUB_NETWORKS[lumpIndex].addTrainingSample(data, getLevel2GenreIndex(genre))
     print('Reading data done')
-    # tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
 
-    # tstdata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-    # for n in xrange(0, tstdata_temp.getLength()):
-        # tstdata.addSample(tstdata_temp.getSample(n)[0], tstdata_temp.getSample(n)[1])
-
-    trndata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-    for n in xrange(0, trndata_temp.getLength()):
-        trndata.addSample(trndata_temp.getSample(n)[0], trndata_temp.getSample(n)[1])
-
-    trndata._convertToOneOfMany()
-    # tstdata._convertToOneOfMany()
-    ## Manual build
-    # fnn = FeedForwardNetwork()
-    # outlayer = SoftmaxLayer(trndata.outdim)
-    # inlayer = LinearLayer(INPUT_DIMS)
-    # hiddenLayer = SigmoidLayer(60)
-    # fnn.addInputModule(inlayer)
-    # fnn.addModule(hiddenLayer)
-    # fnn.addOutputModule(outlayer)
-    # fnn.addConnection(FullConnection(inlayer, hiddenLayer))
-    # fnn.addConnection(FullConnection(hiddenLayer, outlayer))
-    # fnn.sortModules()
-
-    fnn = buildNetwork(trndata.indim, 60, trndata.outdim, outclass=SoftmaxLayer)
+    MAIN_NETWORK.buildNetwork()
+    for n in SUB_NETWORKS:
+        if n is not None:
+            n.buildNetwork()
 
     mistakenDict = dict()
     for x in GENRE_DICT.keys():
@@ -99,8 +156,12 @@ def classifySegments(trainingCSVs, testingCSVs):
         mistakenDict[x] = [0] * NUMBER_OF_GENRES
 
     print('Training...')
-    trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0.1, verbose=True, weightdecay=0.01)
-    trainer.trainEpochs(TRAINING_EPOCHS)
+    MAIN_NETWORK.trainNetwork(TRAINING_EPOCHS)
+    for n in SUB_NETWORKS:
+        if n is not None:
+            n.trainNetwork(TRAINING_EPOCHS)
+    # trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0.1, verbose=True, weightdecay=0.01)
+    # trainer.trainEpochs(TRAINING_EPOCHS)
     print('Training done')
 
     print('Classifying test data segments...')
@@ -128,8 +189,17 @@ def classifySegments(trainingCSVs, testingCSVs):
                 # inputs.append(otherStuff[1])
                 # inputs.append(otherStuff[2])
                 # inputs.append(otherStuff[3])
-                genreConfidences = list(fnn.activate(inputs))
-                segmentGenreIndex = genreConfidences.index(max(genreConfidences))
+                lumpConfidences = MAIN_NETWORK.testData(inputs)
+                chosenLump = lumpConfidences.index(max(lumpConfidences))
+                if SUB_NETWORKS[chosenLump] is None:
+                    segmentLevel2GenreIndex = 0
+                else:
+                    genreConfidences = SUB_NETWORKS[chosenLump].testData(inputs)
+                    segmentLevel2GenreIndex = genreConfidences.index(max(genreConfidences))
+                segmentGenreIndex = GENRE_DICT[LUMPS[chosenLump][segmentLevel2GenreIndex]]
+
+                # genreConfidences = list(fnn.activate(inputs))
+                # segmentGenreIndex = genreConfidences.index(max(genreConfidences))
                 genreCounts[segmentGenreIndex] += 1
                 os.remove(PROCESSING_FILENAME)
         except:
