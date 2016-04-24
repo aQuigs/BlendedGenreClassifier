@@ -134,25 +134,6 @@ def appendData(indir, datadir):
                 csvHandle.write(',')
                 csvHandle.write(ampHandle.readline())
 
-# def temp(indir, datadir):
-    # g = glob.glob(datadir + '/*.csv')
-    # for f in g:
-    #     ampfile = datadir + '/subset/' + os.path.basename(os.path.splitext(f)[0]) + '.amp'
-    #     mp3file = indir + '/' + os.path.basename(os.path.splitext(f)[0]) + '.mp3'
-    #     wavfile = indir + '/' + os.path.basename(os.path.splitext(f)[0]) + '.wav'
-    #     if not os.path.exists(ampfile) and getGenre(mp3file) == 'Hard Rock':
-    #         print(f)
-
-
-
-        # if not os.path.exists(ampfile):
-        #     if os.path.exists('/home/quiggles/BlendedGenreClassifier/songdata/' + os.path.basename(ampfile)):
-        #         print(ampfile)
-        #         copyfile('/home/quiggles/BlendedGenreClassifier/songdata/' + os.path.basename(ampfile), ampfile)
-
-
-
-
 def temp(songdir, datadir):
     songs = set()
     for s in glob.glob(songdir + '/subset/*.mp3'):
@@ -194,8 +175,8 @@ def removeFromSubset(songdir, datadir, genres):
 
 
 def writeGenresToDisk(indir, outdir):
-    # for f in glob.glob(outdir + '/*.genre'):
-        # os.remove(f)
+    for f in glob.glob(outdir + '/*.genre'):
+        os.remove(f)
 
     # masterdict = dict()
     for f in glob.glob(indir + '/*.mp3'):
@@ -205,8 +186,7 @@ def writeGenresToDisk(indir, outdir):
     # print(str(masterdict))
 
 if __name__ == '__main__':
-    # pass
-    # removeFromSubset('/home/quiggles/Desktop/513music/single-genre/classify-me', '/home/quiggles/BlendedGenreClassifier/songdata',['Alternative'])
+    # removeFromSubset('/home/quiggles/Desktop/513music/single-genre/classify-me', '/home/quiggles/BlendedGenreClassifier/songdata',['Punk Rock', 'Alternative', 'Country', 'Pop', 'Classic Rock'])
     # get_subset('/home/quiggles/Desktop/513music/single-genre/classify-me', '/home/quiggles/BlendedGenreClassifier/songdata', 150, ['Punk Rock', 'Rap Rock', 'Pop', 'Alternative','Hard Rock', 'Rap', 'Country', 'Classical','R&B', 'Techno','Classic Rock', 'Indie', 'Instrumental'])
     writeGenresToDisk('/home/quiggles/Desktop/513music/single-genre/classify-me/subset', '/home/quiggles/BlendedGenreClassifier/songdata')
     # temp('/home/quiggles/Desktop/513music/single-genre/classify-me', '/home/quiggles/BlendedGenreClassifier/songdata')

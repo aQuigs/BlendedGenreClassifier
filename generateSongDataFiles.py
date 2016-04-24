@@ -8,7 +8,7 @@ from tagger import ID3v2
 from mfcc import generateMFCCData
 from genreManager import writeGenresToDisk
 
-DIR = '/home/quiggles/Desktop/513music/single-genre/classify-me'
+DIR = os.environ['SONG_DIR']
 OUTDIR = wd + '/songdata'
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ from glob import glob
 import sys, os, glob, string, csv
 wd = os.path.dirname(os.path.realpath(__file__))
 DIR = wd + '/songdata/subset'
-SONG_FILE_DIR = '/home/quiggles/Desktop/513music/single-genre/classify-me/subset'
+SONG_FILE_DIR = os.environ['SONG_DIR']
 
 GENRE_DICT = {
     'Punk Rock'    : 0,
@@ -45,8 +45,6 @@ def classifySegments(trainingCSVs, testingCSVs):
 
     SEGMENT_LENGTH = 1000
     PROCESSING_FILENAME = DIR + '/processing.wav'
-    # AMP_PROCESSING_FILENAME = DIR + '/processing.amp'
-    # TRAINING_DATA_PROPORTION = 0.8
     TRAINING_EPOCHS = 80
 
     print('Reading training data...')
@@ -63,39 +61,15 @@ def classifySegments(trainingCSVs, testingCSVs):
             genre = fhandle.readline()
         trndata_temp.addSample(data, [GENRE_DICT[genre]])
     print('Reading data done')
-    # tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
-
-    # tstdata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-    # for n in xrange(0, tstdata_temp.getLength()):
-        # tstdata.addSample(tstdata_temp.getSample(n)[0], tstdata_temp.getSample(n)[1])
-
     trndata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
     for n in xrange(0, trndata_temp.getLength()):
         trndata.addSample(trndata_temp.getSample(n)[0], trndata_temp.getSample(n)[1])
 
     trndata._convertToOneOfMany()
-    # tstdata._convertToOneOfMany()
-    ## Manual build
-    # fnn = FeedForwardNetwork()
-    # outlayer = SoftmaxLayer(trndata.outdim)
-    # inlayer = LinearLayer(INPUT_DIMS)
-    # hiddenLayer = SigmoidLayer(60)
-    # fnn.addInputModule(inlayer)
-    # fnn.addModule(hiddenLayer)
-    # fnn.addOutputModule(outlayer)
-    # fnn.addConnection(FullConnection(inlayer, hiddenLayer))
-    # fnn.addConnection(FullConnection(hiddenLayer, outlayer))
-    # fnn.sortModules()
-
     fnn = buildNetwork(trndata.indim, 60, trndata.outdim, outclass=SoftmaxLayer)
 
     mistakenDict = dict()
     for x in GENRE_DICT.keys():
-
-        # temp = dict()
-        # for y in GENRE_DICT.keys():
-        #     temp[y] = 0
-        # mistakenDict[x] = temp
         mistakenDict[x] = [0] * NUMBER_OF_GENRES
 
     print('Training...')
@@ -104,9 +78,6 @@ def classifySegments(trainingCSVs, testingCSVs):
     print('Training done')
 
     print('Classifying test data segments...')
-    # totalAccuracy = 0.0
-    # songCount = 0
-    # totalCorrectlyClassified = 0
     genreSongCount = [0] * NUMBER_OF_GENRES
     correctlyClassifiedSongCount = [0] * NUMBER_OF_GENRES
     averageSegmentAccuracies=[0] * NUMBER_OF_GENRES
@@ -123,11 +94,6 @@ def classifySegments(trainingCSVs, testingCSVs):
                 i += SEGMENT_LENGTH
                 segment.export(PROCESSING_FILENAME, format='wav')
                 inputs = getData(PROCESSING_FILENAME).tolist()
-                # otherStuff = analyzeFile(PROCESSING_FILENAME)
-                # inputs.append(otherStuff[0])
-                # inputs.append(otherStuff[1])
-                # inputs.append(otherStuff[2])
-                # inputs.append(otherStuff[3])
                 genreConfidences = list(fnn.activate(inputs))
                 segmentGenreIndex = genreConfidences.index(max(genreConfidences))
                 genreCounts[segmentGenreIndex] += 1
@@ -154,8 +120,6 @@ def classifySegments(trainingCSVs, testingCSVs):
         for j in xrange(len(genreCounts)):
             mistakenList[j] += genreCounts[j] / total
 
-        # totalAccuracy += accuracy
-        # songCount += 1
     print('Done classifying segments')
     for k in mistakenDict:
         for v in xrange(len(mistakenDict[k])):
@@ -182,52 +146,6 @@ def classifySegments(trainingCSVs, testingCSVs):
     genreSongCount = [1 if i == 0 else i for i in genreSongCount]
     return [correctlyClassifiedSongCount[i]/float(genreSongCount[i]) for i in xrange(NUMBER_OF_GENRES)], [averageSegmentAccuracies[i]/genreSongCount[i] for i in xrange(NUMBER_OF_GENRES)]
 
-## Deprecated
-# def classifyWhole():
-#     global NUMBER_OF_GENRES
-#     global INPUT_DIMS
-#     global GENRE_DICT
-#     global DIR
-
-#     alldata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-#     for filename in glob.glob('DIR' + '/*.csv'):
-#         basename = os.path.splitext(filename)[0]
-#         data = None
-#         genre = None
-#         with open(filename, 'rb') as fhandle:
-#             data = list(csv.reader(fhandle))[0]
-#             data = map(float, data)
-#         with open(basename + '.genre', 'r') as fhandle:
-#             genre = fhandle.readline()
-#         alldata.addSample(data, [GENRE_DICT[genre]])
-
-#     tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
-
-#     tstdata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-#     for n in xrange(0, tstdata_temp.getLength()):
-#         tstdata.addSample(tstdata_temp.getSample(n)[0], tstdata_temp.getSample(n)[1])
-
-#     trndata = ClassificationDataSet(INPUT_DIMS, 1, nb_classes=NUMBER_OF_GENRES)
-#     for n in xrange(0, trndata_temp.getLength()):
-#         trndata.addSample(trndata_temp.getSample(n)[0], trndata_temp.getSample(n)[1])
-
-#     trndata._convertToOneOfMany()
-#     tstdata._convertToOneOfMany()
-
-#     fnn = buildNetwork(trndata.indim, 15, trndata.outdim, outclass=SoftmaxLayer)
-
-#     trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0.1, verbose=True, weightdecay=0.01)
-
-#     for i in range(20):
-#         trainer.trainEpochs(5)
-#         trnresult = percentError(trainer.testOnClassData(),
-#                                   trndata['class'])
-#         tstresult = percentError(trainer.testOnClassData(
-#                dataset=tstdata), tstdata['class'])
-#         print "epoch: %4d" % trainer.totalepochs, \
-#               "  train error: %5.2f%%" % trnresult, \
-#               "  test error: %5.2f%%" % tstresult
-
 # Uses 10-fold cross validation
 def generateAccuracies():
     global DIR
@@ -236,7 +154,6 @@ def generateAccuracies():
     N = 10
 
     g = glob.glob(DIR + '/*.csv')
-    # g.sort()
     shuffle(g)
 
     DATA_LENGTH = len(g)/N
